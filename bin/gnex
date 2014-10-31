@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# This is JAR's version of the gnex executable shell script.
+# If you use it you will want to modify it for your own use - at the
+#  very least to change the definition of GNEX.
+
+if [ x$GNEX = x ]; then
+  export GNEX=$HOME/gnex
+fi
+
+if [ ! x$DISPLAY = x ]; then
+  # If running under X, supply font name
+  FONT="-fn -adobe-courier-medium-r-normal--14-100-100-100-m-90-iso8859-1"
+fi
+
+# The following commands were for execution under sawfish.  I don't
+#  even remember what sawfish was.
+# export DISPLAY_WAS=$DISPLAY
+# unset DISPLAY
+
+if [ $# = 0 ] ; then
+  exec emacs $FONT -q -Q -l $GNEX/gnex.elc -l $HOME/.gnex $GNEX_HELLO
+else
+  exec emacs $FONT -q -Q -l $GNEX/gnex.elc -l $HOME/.gnex $*
+fi
