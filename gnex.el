@@ -97,6 +97,7 @@
 		("^/usr/tmp/nn\\." . text-mode))
 	      auto-mode-alist))
 
+; Not defined in emacs 24.4
 (autoload 'scheme-indent-sexp "scheme" "" t)
 
 ; Handy utilities
@@ -909,6 +910,74 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 (setq completion-ignored-extensions
       (append '(".class" ".fasl" ".fsl")
 	      completion-ignored-extensions))
+
+;--------------------
+; Things from JAR's .gnex file
+
+(prefer-coding-system       'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+; renamed to buffer-file-coding-system in 23.2
+(setq default-buffer-file-coding-system 'utf-8)
+;; From Emacs wiki
+(setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+;; MS Windows clipboard is UTF-16LE 
+(set-clipboard-coding-system 'utf-16le-dos)
+
+(setq resize-mini-windows nil)
+
+; Deal with emacs 21 horrors?  Maybe not.
+(add-hook 'comint-mode-hook
+	  '(lambda ()
+	     (remove-hook 'comint-output-filter-functions
+ 	     		  'comint-postoutput-scroll-to-bottom)
+	     (remove-hook 'pre-command-hook 'comint-preinput-scroll-to-bottom)
+	     (remove-hook 'pre-command-hook 'comint-preinput-scroll-to-bottom t)))
+
+; Apparently these aren't respected.  Ugh!
+; comint-scroll-to-bottom-on-output
+; comint-scroll-to-bottom-on-input
+
+(global-font-lock-mode nil)
+
+(setq inhibit-startup-screen t)  ;Emacs 22
+
+; Recover vertical space
+(when (fboundp 'menu-bar-mode)
+  (menu-bar-mode -1))
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+
+; FIXES FOR EMACS VERSION 24
+
+(setq line-move-visual nil)
+
+(add-hook 'comint-mode-hook
+	  '(lambda ()
+	     (define-meta "p" 'comint-previous-input)
+	     (define-meta "n" 'comint-next-input)))
+
+(add-hook 'shell-mode-hook
+	  '(lambda ()
+	     (define-meta "p" 'comint-previous-input)
+	     (define-meta "n" 'comint-next-input)))
+
+
+; Fix control-meta-Q
+(define-control-meta "q" 'indent-sexp)
+
+; Fix control-M and control-J
+(when (fboundp 'electric-indent-mode)
+  (electric-indent-mode 0)
+  (add-hook 'java-mode-hook '(lambda ()
+                               (electric-indent-mode 0))))
+
+(setq delete-active-region nil)
+
+; From lisp IRC
+(setq-default indent-tabs-mode nil)
+
 
 ;--------------------
 ; Coda
