@@ -1,5 +1,5 @@
-; -*- Version: 84; -*-
 ; Last modified: 2008-06-18 on biota.neurocommons.org
+; This used to do something:  -*- Version: 84; -*-
 
 ; NEX emulation for GNU emacs
 ; Thanks to Steve Gildea (gildea@bbn.com) for switch-to-previous-buffer.
@@ -16,7 +16,6 @@
 ;  Numeric arg to just-one-space
 
 (defvar nex-global-map (copy-keymap global-map))
-
 
 (defun nex ()
   "Turn this emacs into a GNEX."
@@ -922,8 +921,10 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 (setq default-buffer-file-coding-system 'utf-8)
 ;; From Emacs wiki
 (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
+
 ;; MS Windows clipboard is UTF-16LE 
-(set-clipboard-coding-system 'utf-16le-dos)
+; This fails on PureOS.
+; (set-clipboard-coding-system 'utf-16le-dos)
 
 (setq resize-mini-windows nil)
 
@@ -984,6 +985,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 
 (use-global-map nex-global-map)
 (put 'nex 'loaded t)
+(put 'gnex 'loaded t)
 
 ; Sub-load some stuff
 
@@ -996,7 +998,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 	(nex-display-time))
   (error (message "lost loading modlin")))
 
-; Load init file...  (why not?)
+; Load init file...  (why not? - probably some reason.)
 
 ;(if (not (get 'nex 'init-file-loaded))
 ;    (progn (message "loading .gnex")

@@ -18,8 +18,15 @@ fi
 # export DISPLAY_WAS=$DISPLAY
 # unset DISPLAY
 
+gnexel=$GNEX/gnex
+
+init=
+if [ -e $HOME/.gnex ]; then
+  init="-l $HOME/.gnex"
+fi
+
 if [ $# = 0 ] ; then
-  exec emacs $FONT -q -Q -l $GNEX/gnex.elc -l $HOME/.gnex $GNEX_HELLO
+  exec emacs $FONT -q -Q -l $gnexel $init $* -l $HOME/.gnex $GNEX_HELLO
 else
-  exec emacs $FONT -q -Q -l $GNEX/gnex.elc -l $HOME/.gnex $*
+  exec emacs $FONT -q -Q -l $gnexel $init -l $HOME/.gnex $*
 fi
