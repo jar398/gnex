@@ -1,0 +1,22 @@
+# MacOS folder meta-info
+.DS_Store
+
+# Microsoft Office (locks and backup files)
+~$*
+.~*#
+
+# Emacs (locks and backup files)
+*~
+\#*
+.\#*
+
+# JetBrains IntelliJ/PyCharm/etc metadata
+.idea/
+
+# Vi
+*.swp
+*.swo
+
+# GIMP source files
+# The x32.xcf files are artifacts of creation but not real source files.
+*x32.xcf
