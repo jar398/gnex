@@ -1,4 +1,5 @@
-; Last modified: 2008-06-18 on biota.neurocommons.org
+; Modified: 2024-10-31 on viola.mumble.net
+; Modified: 2008-06-18 on biota.neurocommons.org
 ; This used to do something:  -*- Version: 84; -*-
 
 ; NEX emulation for GNU emacs
@@ -16,6 +17,7 @@
 ;  Numeric arg to just-one-space
 
 (defvar nex-global-map (copy-keymap global-map))
+(defvar default-mode-line-format)
 
 (defun nex ()
   "Turn this emacs into a GNEX."
@@ -68,10 +70,13 @@
        (menu-bar-mode -1)
        (scroll-bar-mode -1)
        ;; What's this for?
+       ;; Not defined in emacs 29.4
        (load-library "filladapt")))
 
 
 ; Miscellaneous fixes
+
+(defvar scheme-mode-syntax-table)
 
 (defun fix-scheme-mode ()
   (interactive nil)
@@ -134,11 +139,14 @@
 ;      (setq strings (cdr strings)))
 ;    s))
 
-(defun read-char-from-minibuffer (prompt)
+; This is built in to emacs 29.4 ?
+
+(if (not (emacs-version>= 29 4))
+ (defun read-char-from-minibuffer (prompt &optional chars history)
   (if (and (not executing-kbd-macro)    ;was executing-macro
 	   (sit-for 1))
       (message prompt))
-  (read-char))
+  (read-char)))
 
 (defun to-string (thing)
   (cond ((stringp thing) thing)
@@ -179,15 +187,17 @@
   (call-interactively 'save-buffers-kill-emacs))
 
 ; Control-meta-L
+; This is now built in to emacs
 
-(defun previous-buffer (n)
+(if (not (emacs-version>= 29 4))
+ (defun previous-buffer (n)
   "Return the Nth previously selected buffer.  Default is normally 2.
 Actually, it is the number of windows plus 1.  That is, no argument
 switches to the most recently selected buffer that is not visible.  If
 N is 1, repeated calls will cycle through all buffers; -1 cycles the
 other way.  If N is greater than 1, the first N buffers on the buffer
 list are rotated.  gildea 13 Feb 89"
-;  (interactive "P")
+  ;(interactive "P")
   (if (not n)
       (other-buffer)
     (let ((buffer-list (buffer-list)))
@@ -205,7 +215,7 @@ list are rotated.  gildea 13 Feb 89"
 	  (setq buffer-list (cdr buffer-list))))
       (if buffer-list
 	  (car buffer-list)
-	(error "There aren't that many buffers")))))
+	(error "There aren't that many buffers"))))))
 
 (defun switch-to-previous-buffer (n)
   "Switch to the Nth previously selected buffer.
@@ -370,17 +380,17 @@ The following characters are treated specially:
 
 (defun string-search-forward (string)
   (interactive "sSearch: ")
-  (string-search string 'search-forward nil))
+  (gnex-string-search string 'search-forward nil))
 
 (defun string-search-backward (string)
   (interactive "sSearch backward: ")
-  (string-search string 'search-backward nil))
+  (gnex-string-search string 'search-backward nil))
 
 (defun %delimited-search-forward (string)
   (interactive "sDelimited search: ")
-  (string-search string 're-search-forward t))
+  (gnex-string-search string 're-search-forward t))
 
-(defun string-search (string search-function delimitp)
+(defun gnex-string-search (string search-function delimitp)
   (if (equal string "")
       (setq string last-search-string)
       (setq last-search-string string))
@@ -396,6 +406,9 @@ The following characters are treated specially:
 	(signal 'search-failed (list string)))))
 
 ; Mini-Find Tag
+
+; Regexp that matches any Lisp/Scheme constituent character (including :)
+(defvar constituent-char-regexp "[!-'*-/0-9:<-@A-Z^_a-z~]")
 
 (defvar last-mini-tag "" "Last tag sought by mini-find-tag.")
 
@@ -433,11 +446,12 @@ that matches the tag name used in the previous mini-find-tag."
 	       (goto-char pt))
       (signal 'search-failed '()))))
 
-; Regexp that matches any Lisp/Scheme constituent character (including :)
-
-(defvar constituent-char-regexp "[!-'*-/0-9:<-@A-Z^_a-z~]")
-
 ; indent-differently
+
+(defvar scheme-indent-property
+  (if (emacs-version>= 19 0)
+      'scheme-indent-function
+      'scheme-indent-hook))
 
 (defun indent-differently ()
   (interactive nil)
@@ -465,10 +479,6 @@ that matches the tag name used in the previous mini-find-tag."
     ;; was: (scheme-indent-line)
     (indent-for-tab-command)))
 
-(defvar scheme-indent-property
-  (if (emacs-version>= 19 0)
-      'scheme-indent-function
-      'scheme-indent-hook))
 
 ; Version numbers
 ; Pirated from GNU's "set-auto-mode"
@@ -526,7 +536,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 	    (error "weird version number"))))))
 
 ; was: (setq write-file-hook 'maybe-increment-version)
-(add-hook 'maybe-increment-version 'write-file-functions)
+; (add-hook 'maybe-increment-version 'write-file-functions)
 
 (defun update-time ()
   (when (fboundp 'really-update-time)
@@ -918,6 +928,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 ; renamed to buffer-file-coding-system in 23.2
+(defvar default-buffer-file-coding-system)
 (setq default-buffer-file-coding-system 'utf-8)
 ;; From Emacs wiki
 (setq x-select-request-type '(UTF8_STRING COMPOUND_TEXT TEXT STRING))
@@ -930,6 +941,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 
 ; Deal with emacs 21 horrors?  Maybe not.
 (add-hook 'comint-mode-hook
+	  ; emacs 29 would prefer #'(lambda ...)
 	  '(lambda ()
 	     (remove-hook 'comint-output-filter-functions
  	     		  'comint-postoutput-scroll-to-bottom)
@@ -955,11 +967,13 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 (setq line-move-visual nil)
 
 (add-hook 'comint-mode-hook
+	  ; emacs 29 would prefer #'(lambda ...)
 	  '(lambda ()
 	     (define-meta "p" 'comint-previous-input)
 	     (define-meta "n" 'comint-next-input)))
 
 (add-hook 'shell-mode-hook
+	  ; emacs 29 would prefer #'(lambda ...)
 	  '(lambda ()
 	     (define-meta "p" 'comint-previous-input)
 	     (define-meta "n" 'comint-next-input)))
@@ -971,6 +985,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 ; Fix control-M and control-J
 (when (fboundp 'electric-indent-mode)
   (electric-indent-mode 0)
+  ; emacs 29 would prefer #'(lambda ...)
   (add-hook 'java-mode-hook '(lambda ()
                                (electric-indent-mode 0))))
 
@@ -988,9 +1003,11 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 (put 'gnex 'loaded t)
 
 ; Sub-load some stuff
+; nex-display-time is defined in modlin.el
 
 (condition-case nil
     (if (and (getenv "GNEX")
+	     ;; LOAD not defined in emacs 29.4
 	     (load "$GNEX/modlin" nil t)
 	     (fboundp 'start-process))
 	;; This loses in newer emacs because the program "wakeup" isn't

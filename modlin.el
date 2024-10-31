@@ -25,7 +25,8 @@
 (defvar not-nex-mode-line-format default-mode-line-format)
 
 (defvar nex-mode-line-format
-  (if (equal (substring emacs-version 0 5) "18.44")
+  (if (emacs-version>= 18 44)
+      ; was (equal (substring emacs-version 0 5) "18.44")
       "%[GNEX  %M [%m] %b%] --%p--  %1*%1*%-"
       '("%[GNEX  "
 	display-time-string
