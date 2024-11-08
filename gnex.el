@@ -139,15 +139,6 @@
 ;      (setq strings (cdr strings)))
 ;    s))
 
-; This is built in to emacs 29.4 ?
-
-(if (not (emacs-version>= 29 4))
- (defun read-char-from-minibuffer (prompt &optional chars history)
-  (if (and (not executing-kbd-macro)    ;was executing-macro
-	   (sit-for 1))
-      (message prompt))
-  (read-char)))
-
 (defun to-string (thing)
   (cond ((stringp thing) thing)
 	((symbolp thing) (symbol-name thing))
@@ -308,6 +299,8 @@ For example, to insert a bullet, type control-X , 7"
   (insert (+ c 128)))
 
 
+; Change to keymap-set ?  define-key seems to be deprecated
+; but "there's no obligation to convert to using the keymap-* functions."
 (define-key nex-global-map "\C-X," 'insert-ISO-8859)
 
 
@@ -615,21 +608,25 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 (put 'with-simple-restart  'lisp-indent-hook 1)
 
 
-; Returns a pair (command . string)
+(defun read-char-prompted (prompt &optional chars history)
+  (if (and (not executing-kbd-macro)    ;was executing-macro
+	   (sit-for 1))
+      (message prompt))
+  (read-char))
 
 ; Can't use read-key-sequence because it doesn't take keymaps as
-; arguments.
+; arguments?
 
-(defun get-key-sequence (nextc next-global-map next-local-map prefix)
+(defun get-key-sequence (nextc gnex-global-map gnex-local-map prefix)
   (let (c local global keybuf local-command global-command)
 
     (setq keybuf "")
 
-    (while (or next-local-map next-global-map)
+    (while (or gnex-local-map gnex-global-map)
       (if (>= nextc 0)
 	  (progn (setq c nextc)
 		 (setq nextc -1))
-	  (setq c (read-char-from-minibuffer
+	  (setq c (read-char-prompted
 		   (if (= (length keybuf) 0)
 		       prefix
 		       (concat prefix
@@ -640,12 +637,12 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 	  (progn (setq nextc (logand c 0177))
 		 (setq c meta-prefix-char)))
       (setq global 
-	    (if next-global-map
-		(get-keyelt (access-keymap next-global-map c))
+	    (if gnex-global-map
+		(get-keyelt (access-keymap gnex-global-map c))
 		nil))
       (setq local
-	    (if next-local-map
-		(get-keyelt (access-keymap next-local-map c))
+	    (if gnex-local-map
+		(get-keyelt (access-keymap gnex-local-map c))
 		nil))
 
       ;; If C is not defined in either keymap
@@ -654,12 +651,12 @@ between -*-'s in the first lineof the file, otherwise returns nil."
       (if (and (null global) (null local) (uppercasep c))
 	  (progn
 	    (setq global
-		  (if next-global-map
-		      (get-keyelt (access-keymap next-global-map (downcase c)))
+		  (if gnex-global-map
+		      (get-keyelt (access-keymap gnex-global-map (downcase c)))
 		      nil))
 	    (setq local
-		  (if next-local-map
-		      (get-keyelt (access-keymap next-local-map (downcase c)))
+		  (if gnex-local-map
+		      (get-keyelt (access-keymap gnex-local-map (downcase c)))
 		      nil))
 
 	    ;; If that has worked better that the original char,
@@ -669,8 +666,8 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 
       (setq keybuf (concat keybuf (make-string 1 c)))
 
-      (setq next-local-map nil)
-      (setq next-global-map nil)
+      (setq gnex-local-map nil)
+      (setq gnex-global-map nil)
 
       (setq local-command local)
       (setq global-command global)
@@ -693,9 +690,9 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 	      (and (or (null local) (>= nextc 0))
 		   (keymapp global)))
 
-	  (progn (setq next-local-map
+	  (progn (setq gnex-local-map
 		       (if (keymapp local) local nil))
-		 (setq next-global-map
+		 (setq gnex-global-map
 		       (if (keymapp global) global nil)))))
 
     ;; (message (concat prefix (key-description keybuf)))
@@ -758,7 +755,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
     (call-interactively (or (car (cdr stuff)) (car stuff)))))
 
 (defun get-control-command ()
-  (let ((c (read-char-from-minibuffer "C-")))
+  (let ((c (read-char-prompted "C-")))
     (if (controllable c)
 	(get-key-sequence (if (controlp c) c (controlify c))
 			  nex-global-map
@@ -795,7 +792,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 ; Returns (global local string)
 
 (defun get-meta-command (flush-controls)
-  (let ((c (read-char-from-minibuffer "M-")))
+  (let ((c (read-char-prompted "M-")))
     (get-key-sequence (if (and flush-controls (controlp c))
 			  (logxor c 64)
 			  c)
@@ -823,7 +820,7 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 
 ;+++ Problem: there's no way to type local mode commands like C-c x
 (defun get-control-meta-command ()
-  (let ((c (read-char-from-minibuffer "C-M-")))
+  (let ((c (read-char-prompted "C-M-")))
     (if (or (controlp c) (controllable c))
 	(get-key-sequence (if (controlp c) c (controlify c))
 			  nex-meta-map
@@ -1018,9 +1015,8 @@ between -*-'s in the first lineof the file, otherwise returns nil."
 ; Load init file...  (why not? - probably some reason.)
 
 ;(if (not (get 'nex 'init-file-loaded))
-;    (progn (message "loading .gnex")
-;	   (load-file "~/.gnex")
-;	   (put 'nex 'init-file-loaded t)))
+;    (progn (load-file "~/.gnex")
+;	    (put 'nex 'init-file-loaded t)))
 
 
 ;; Not surprisingly, some code in this file is based on code from Gnu
