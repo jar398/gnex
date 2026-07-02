@@ -134,7 +134,15 @@
 ;      (setq strings (cdr strings)))
 ;    s))
 
-(defun read-char-from-minibuffer (prompt)
+; The following is used when reverting a changed file...
+
+; ask-user-about-supersession-threat seems to call it with 2 args?
+; New signature ~2025: read-char-from-minibuffer prompt &optional chars history
+; We shouldn't ignore the optional args here, but I am too lazy to go
+; read the new emacs sources to figure out how, so I will just throw
+; them away.
+
+(defun read-char-from-minibuffer (prompt &optional chars history)
   (if (and (not executing-kbd-macro)    ;was executing-macro
 	   (sit-for 1))
       (message prompt))
